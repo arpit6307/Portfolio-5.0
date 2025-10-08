@@ -1,17 +1,16 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../utils/Auth'; // Hum yeh AuthContext use karenge
+import { useAuth } from '../../utils/Auth';
 
 const ProtectedRoute = ({ children }) => {
-  const { currentUser } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
 
-  if (!currentUser) {
-    // Agar user logged in nahi hai, to login page par redirect karein
-    return <Navigate to="/admin/login" />;
-  }
+    // Agar user logged in nahi hai, ya logged in hai lekin admin nahi hai, to use redirect karein
+    if (!currentUser || !isAdmin) {
+        return <Navigate to="/auth" />;
+    }
 
-  // Agar logged in hai, to requested page dikhayein
-  return children;
+    return children;
 };
 
 export default ProtectedRoute;

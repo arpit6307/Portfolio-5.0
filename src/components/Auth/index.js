@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
     Container, Wrapper, Title, Desc, Form, Input, Button, Error,
     ToggleButton, LinkText, ForgotPassword, CardContainer, LoginCard,
-    RegisterCard, InputWrapper, Icon, PasswordToggle, Message
+    RegisterCard, InputWrapper, Icon, PasswordToggle, Message,
+    PasswordStrengthIndicator, StrengthBar, StrengthText
 } from './AuthStyle';
 import { useAuth } from '../../utils/Auth';
 import Footer from '../Footer'; // Import Footer
@@ -14,8 +15,6 @@ const AuthPage = () => {
         signup, 
         login, 
         sendPasswordResetEmail, 
-        error, 
-        setError 
     } = useAuth() || {};
     const navigate = useNavigate();
     
@@ -31,20 +30,45 @@ const AuthPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const [passwordStrength, setPasswordStrength] = useState({ score: 0, text: 'Kamzor' });
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        if (setError) setError(null);
-    }, [setError]);
+        setError(null);
+    }, []);
     
+    // Clear form fields and errors when view changes
     useEffect(() => {
         setName('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        if (setError) setError(null);
+        setError('');
         setMessage('');
-    }, [view, isForgotView, setError]);
+    }, [view, isForgotView]);
+
+    // Check password strength on the fly for signup
+    useEffect(() => {
+        if (view === 'register' && password) {
+            checkPasswordStrength(password);
+        }
+    }, [password, view]);
+
+    const checkPasswordStrength = (pass) => {
+        let score = 0;
+        let text = 'Kamzor';
+        if (pass.length > 5) score++;
+        if (pass.length > 8) score++;
+        if (/[A-Z]/.test(pass)) score++; // Uppercase letter
+        if (/[0-9]/.test(pass)) score++; // Number
+        if (/[^A-Za-z0-9]/.test(pass)) score++; // Special character
+
+        if (score > 4) text = 'Bahut Mazboot';
+        else if (score > 2) text = 'Theek';
+        
+        setPasswordStrength({ score, text });
+    };
 
     const handleFlip = (targetView) => {
         if (isForgotView) setIsForgotView(false);
@@ -53,28 +77,45 @@ const AuthPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (setError) setError(null);
+        setError('');
         setMessage('');
         setIsLoading(true);
 
         try {
             if (isForgotView) {
+                if (!email) throw new Error("Please enter your email.");
                 if (typeof sendPasswordResetEmail !== 'function') throw new Error("Feature not available.");
                 await sendPasswordResetEmail(email);
                 setMessage("Password reset email sent! Please check your inbox.");
             } else if (view === 'login') {
+                if (!email || !password) throw new Error("Email and password are required.");
                 if (typeof login !== 'function') throw new Error("Login feature not available.");
                 await login(email, password);
-                navigate('/');
+                navigate('/'); // YAHAN BADLAV KIYA GAYA HAI
             } else if (view === 'register') {
+                if (!name || !email || !password) throw new Error("All fields are required.");
+                if (password.length < 6) throw new Error("Password must be at least 6 characters long.");
                 if (password !== confirmPassword) throw new Error("Passwords do not match!");
                 if (typeof signup !== 'function') throw new Error("Signup feature not available.");
                 await signup(email, password);
-                navigate('/');
+                setMessage("Signup successful! Please login to continue.");
+                setView('login'); // Switch to login view
             }
         } catch (err) {
-            if (setError && err.message) {
-                setError(err.message);
+            switch (err.code) {
+                case 'auth/invalid-email':
+                    setError('You have entered an invalid email format.');
+                    break;
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    setError('Your email or password is incorrect.');
+                    break;
+                case 'auth/email-already-in-use':
+                    setError('This email is already registered.');
+                    break;
+                default:
+                    setError(err.message || 'Something went wrong. Please try again.');
             }
         } finally {
             setIsLoading(false);
@@ -153,6 +194,12 @@ const AuthPage = () => {
                         {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                     </PasswordToggle>
                 </InputWrapper>
+                {password && (
+                    <PasswordStrengthIndicator>
+                        <StrengthText>Password Strength: <b>{passwordStrength.text}</b></StrengthText>
+                        <StrengthBar score={passwordStrength.score} />
+                    </PasswordStrengthIndicator>
+                )}
                 <Button type="submit" disabled={isLoading}>{isLoading ? 'Creating Account...' : 'Sign Up'}</Button>
             </Form>
             <ToggleButton>

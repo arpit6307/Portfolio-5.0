@@ -14,7 +14,7 @@ import { Bio } from '../../data/constants';
 import { useAuth } from '../../utils/Auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const Navbar = ({ darkMode, setDarkMode }) => {
+const Navbar = ({ darkMode, setDarkMode, hideAdminButton }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeLink, setActiveLink] = useState('about');
   const { currentUser, logout } = useAuth();
@@ -68,7 +68,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
 
   const handleNavLinkClick = (sectionId) => {
     setIsOpen(false);
-    if (location.pathname === '/auth') {
+    if (location.pathname.startsWith('/admin') || location.pathname === '/auth') {
         navigate(`/#${sectionId}`);
     } else {
         const element = document.getElementById(sectionId);
@@ -137,15 +137,25 @@ const Navbar = ({ darkMode, setDarkMode }) => {
           <NavLink onClick={() => handleNavLinkClick('contact')} className={activeLink === 'contact' ? 'active' : ''}>Contact</NavLink>
         </NavItems>
         <ButtonContainer>
-          {/* Admin Panel Button sirf logged-in user ko dikhega */}
-          {currentUser && (
-            <OSButton onClick={() => navigate('/admin/dashboard')} title="Admin Dashboard">
-               <FaUserShield style={{ fontSize: '1.2rem' }} />
-            </OSButton>
-          )}
-          <OSButton onClick={handleAuthClick}>
-            {AuthButtonContent}
-          </OSButton>
+            {/* Logic to hide/show Admin and Auth buttons */}
+            {!hideAdminButton && (
+              <>
+                {currentUser && (
+                  <OSButton onClick={() => navigate('/admin/dashboard')} title="Admin Dashboard">
+                    <FaUserShield style={{ fontSize: '1.2rem' }} />
+                  </OSButton>
+                )}
+                <OSButton onClick={handleAuthClick}>
+                  {AuthButtonContent}
+                </OSButton>
+              </>
+            )}
+             {/* Logout button dashboard par bhi dikhega agar user logged in hai */}
+             {hideAdminButton && currentUser && (
+                <OSButton onClick={handleAuthClick}>
+                    {AuthButtonContent}
+                </OSButton>
+             )}
           <GitHubButton
             as="button"
             onClick={handleGithubClick}
@@ -167,8 +177,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
         <MobileLink onClick={() => handleNavLinkClick('education')}><FaGraduationCap /> Education</MobileLink>
         <MobileLink onClick={() => handleNavLinkClick('contact')}><FaEnvelope /> Contact</MobileLink>
 
-        {/* Mobile menu mein Admin Panel ka link */}
-        {currentUser && (
+        {!hideAdminButton && currentUser && (
             <MobileLink onClick={() => { navigate('/admin/dashboard'); setIsOpen(false); }}>
                 <FaUserShield /> Admin Panel
             </MobileLink>

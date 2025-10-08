@@ -35,7 +35,7 @@ export const Container = styled.div`
   align-items: center;
   min-height: 100vh;
   padding: 20px;
-  padding-top: 120px; /* Added space from navbar */
+  padding-top: 20px; /* YAHAN BADLAV KIYA GAYA HAI: Gap kam karne ke liye 100px se 20px kiya gaya */
   padding-bottom: 20px;
   background: linear-gradient(-45deg, ${({ theme }) => theme.bg}, ${({ theme }) => theme.bg_light}, ${({ theme }) => theme.primary + '11'});
   background-size: 400% 400%;
@@ -248,5 +248,46 @@ export const Message = styled.div`
     text-align: center;
     font-size: 14px;
     margin-top: 20px;
+`;
+
+// Styles for Password Strength Indicator
+export const PasswordStrengthIndicator = styled.div`
+  width: 100%;
+  margin-top: -5px; 
+  margin-bottom: 10px;
+  animation: ${float} 4s ease-in-out infinite;
+  animation-delay: 0.6s; 
+`;
+
+export const StrengthText = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.text_secondary};
+  margin-bottom: 8px;
+  text-align: left;
+`;
+
+export const StrengthBar = styled.div`
+  height: 8px;
+  width: 100%;
+  background-color: ${({ theme }) => theme.card};
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: ${({ score }) => (score / 5) * 100}%;
+    background-color: ${({ score }) => {
+      if (score > 4) return '#28a745'; 
+      if (score > 2) return '#ffc107'; 
+      return '#dc3545'; 
+    }};
+    border-radius: 10px;
+    transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+  }
 `;
 
